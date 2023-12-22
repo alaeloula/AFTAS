@@ -52,31 +52,15 @@ public class HuntingService implements IHunting {
                huntingEntity.setMembre(member);
                 huntingEntity.setCompetition(competition);
 
-            Hunting savedHunting =
-                    huntingRepository.save(huntingEntity);
+            Hunting savedHunting = huntingRepository.save(huntingEntity);
             return modelMapper.map(savedHunting, HuntingDtoRes.class);
+        }else if(huntingFound.isPresent()){
+            int number = huntingFound.get().getNumberOfFish();
+            huntingFound.get().setNumberOfFish(number + huntingDto.getNumberOfFish());
+            huntingRepository.save(huntingFound.get());
+            return modelMapper.map(huntingFound , HuntingDtoRes.class);
         }
 
-
-//            Hunting huntingToSave = modelMapper.map(hunting , Hunting.class);
-//            Competition competition = competitionRepository.findById(hunting.getCompetition()).orElseThrow(() -> new ResourceNotFoundException("Invalid competition Code"));
-//            Member member = memberRepository.findById(hunting.getMember()).orElseThrow(() -> new ResourceNotFoundException("Invalid Member code"));
-//            Fish fish = fishRepository.findById(hunting.getFish()).orElseThrow(() -> new ResourceNotFoundException("Invalid Fish code"));
-//            RankingId rankingId = new RankingId(competition.getCode(), member.getNum());
-//            rankingRepository.findById(rankingId).orElseThrow(()-> new ResourceNotFoundException("This member : "+ member.getName() + member.getFamilyName()+" is not registered in this competition" + competition.getCode()));
-//            Optional<Hunting> huntingFound = huntingRepository.findByCompetitionAndFishAndMember(competition , fish ,member);
-//            if(huntingFound.isPresent()){
-//                int number = huntingFound.get().getNumberOfFish();
-//                huntingFound.get().setNumberOfFish(number + huntingToSave.getNumberOfFish());
-//                huntingRepository.save(huntingFound.get());
-//                return Optional.of(modelMapper.map(huntingFound , HuntingResp.class));
-//            }else{
-//                huntingToSave.setFish(fish);
-//                huntingToSave.setMember(member);
-//                huntingToSave.setCompetition(competition);
-//                huntingRepository.save(huntingToSave);
-//                return Optional.of(modelMapper.map(huntingToSave , HuntingResp.class));
-//            }
         return null;
     }
 
@@ -115,7 +99,7 @@ public class HuntingService implements IHunting {
 
 
     //@Override
-    public List<HuntingDtoRes> getHuntingsByCompetition(int competitionId) {
+    public List<HuntingDtoRes> getHuntingsByCompetition(String competitionId) {
         return null;
     }
 
@@ -123,6 +107,16 @@ public class HuntingService implements IHunting {
     //@Override
     public List<HuntingDtoRes> getHuntingsByMember(int memberId) {
         return null;
+    }
+
+
+    public List<HuntingDtoRes> getHuntByParticipantInCompetition(String code, int num) {
+        Competition competition = competitionRepository.findById(code).orElseThrow(() -> new ResourceNotFoundException("Invalid competition Code"));
+        Membre member = memberRepository.findById(num).orElseThrow(() -> new ResourceNotFoundException("Invalid Member code"));
+        RankingId rankingId = new RankingId(competition.getCode(), member.getNum());
+        rankingRepository.findById(rankingId).orElseThrow(()-> new ResourceNotFoundException("This member : "+ member.getName() + member.getFamilyName()+" is not registered in this competition" + competition.getCode()));
+        List<Hunting> hunts = huntingRepository.findByCompetitionAndMembre(competition,member);
+        return hunts.stream().map((hunt) -> modelMapper.map(hunt , HuntingDtoRes.class)).collect(Collectors.toList());
     }
 
 }

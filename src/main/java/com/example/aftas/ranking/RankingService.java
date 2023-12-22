@@ -3,6 +3,8 @@ package com.example.aftas.ranking;
 import com.example.aftas.competition.CompetionRepository;
 import com.example.aftas.competition.Competition;
 import com.example.aftas.exception.ResourceNotFoundException;
+import com.example.aftas.hunting.HuntingDtoRes;
+import com.example.aftas.hunting.HuntingService;
 import com.example.aftas.member.MemberRepository;
 import com.example.aftas.member.Membre;
 import org.modelmapper.ModelMapper;
@@ -10,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -20,15 +24,18 @@ public class RankingService implements IRanking {
     private final RankingRepository rankingRepository;
     private final CompetionRepository competitionRepository;
     private final MemberRepository memberRepository;
+    private final HuntingService huntingService;
+
 
     @Autowired
     private ModelMapper modelMapper;
 
     @Autowired
-    public RankingService(RankingRepository rankingRepository, CompetionRepository competitionRepository, MemberRepository memberRepository) {
+    public RankingService(RankingRepository rankingRepository, CompetionRepository competitionRepository, MemberRepository memberRepository, HuntingService huntingService) {
         this.rankingRepository = rankingRepository;
         this.competitionRepository = competitionRepository;
         this.memberRepository = memberRepository;
+        this.huntingService = huntingService;
     }
 
     @Override
@@ -92,18 +99,75 @@ public class RankingService implements IRanking {
     }
 
 
+    public List<RankingDtoRes> getRankingsByCompetitionCode(String competitionCode) {
+        Competition competition = competitionRepository.findById(competitionCode).orElseThrow(() -> new ResourceNotFoundException("Invalid competition Code"));
+        List<Ranking> rankings = rankingRepository.findByCompetition(competition);
+        return rankings.stream().map(ranking -> modelMapper.map(ranking, RankingDtoRes.class))
+                .collect(Collectors.toList());
+    }
 
-    public boolean validateRanking(int competitionCode) {
+
+    public boolean validateRanking(String  competitionCode) {
         Competition competition = competitionRepository.findById(competitionCode).orElseThrow(() -> new IllegalArgumentException("Invalid competition Code"));
         int numberOfParticipant = rankingRepository.countRankingByCompetition(competition);
         return numberOfParticipant >= competition.getNumberOfParticipation();
     }
 
-    public boolean validateDate(int competitionCode) {
+    public boolean validateDate(String competitionCode) {
         Competition competition = competitionRepository.findById(competitionCode).orElseThrow(() -> new IllegalArgumentException("Invalid competition Code"));
         LocalDate currentDate = LocalDate.now();
         LocalDate minDate = currentDate.plusDays(1);
         return minDate.isAfter(competition.getDate());
     }
+
+
+
+
+
+    public List<RankingDtoRes> calculateAndSetRankings(String competitionCode) {
+        Competition competition = competitionRepository.findById(competitionCode).orElseThrow(() -> new ResourceNotFoundException("Invalid competition Code"));
+        List<Ranking> rankings = rankingRepository.findByCompetition(competition);
+        for(Ranking r : rankings){
+            r.setScore(calculateScoreForRanking(r,competitionCode));
+            rankingRepository.save(r);
+        }
+        setRankForInCompetition(competition);
+        return rankings.stream().map((rank) -> modelMapper.map(rank , RankingDtoRes.class)).collect(Collectors.toList());
+    }
+
+    private void setRankForInCompetition(Competition competitionCode) {
+        List<Ranking> memberRankings = rankingRepository.findByCompetition(competitionCode);
+        Collections.sort(memberRankings, Comparator.comparingInt(Ranking::getScore).reversed());
+
+        int rank = 1;
+        for (Ranking ranking : memberRankings) {
+            ranking.setRank(rank++);
+            rankingRepository.save(ranking);
+        }
+    }
+
+    public int calculateScoreForRanking(Ranking ranking, String competitionCode) {
+        int totalScore = 0;
+        List<HuntingDtoRes> hunts = huntingService.getHuntByParticipantInCompetition(competitionCode, ranking.getMember().getNum());
+        for (HuntingDtoRes hunt : hunts) {
+            int score = hunt.getFish().getLevel().getPoint() * hunt.getNumberOfFish();
+            totalScore += score;
+        }
+        return totalScore;
+    }
+
+
+    public List<RankingDtoRes> getPodiumByCompetitionCode(String competitionCode) {
+        List<RankingDtoRes> allRankings = getRankingsByCompetitionCode(competitionCode);
+        allRankings.sort(Comparator.comparingInt(RankingDtoRes::getScore).reversed());
+        List<RankingDtoRes> podium = allRankings.stream()
+                .limit(3)
+                .collect(Collectors.toList());
+
+        return podium;
+    }
+
+
+
 }
 

@@ -19,8 +19,7 @@ import java.util.List;
 
 public class Competition {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int code;
+    private String code;
 
     @Future(message = "La date doit être dans le futur")
     @NotNull(message = "La date ne peut pas être nulle")
@@ -42,7 +41,6 @@ public class Competition {
     private double amount;
 
     @OneToMany(mappedBy = "competition", fetch = FetchType.LAZY)
-           // , cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ranking> rankings;
     @OneToMany(mappedBy = "competition", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Hunting> huntings;

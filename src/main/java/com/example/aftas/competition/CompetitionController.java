@@ -5,6 +5,8 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,14 +25,21 @@ public class CompetitionController {
         this.competitionService = competitionService;
     }
 
+   // @GetMapping
+//    public ResponseEntity<List<CompetitionDtoRes>> getAllCompetitions() {
+//        List<CompetitionDtoRes> competitions = competitionService.getAllCompetitions();
+//        return new ResponseEntity<>(competitions, HttpStatus.OK);
+//    }
     @GetMapping
-    public ResponseEntity<List<CompetitionDtoRes>> getAllCompetitions() {
-        List<CompetitionDtoRes> competitions = competitionService.getAllCompetitions();
-        return new ResponseEntity<>(competitions, HttpStatus.OK);
+    public ResponseEntity<Page<CompetitionDtoRes>> getAllCompetitions(Pageable pageable) {
+        Page<CompetitionDtoRes> competitions = competitionService.getAllCompetitions(pageable);
+        return ResponseEntity.ok().body(competitions);
     }
 
+
+
     @GetMapping("/{id}")
-    public ResponseEntity<CompetitionDtoRes> getCompetitionById(@PathVariable("id") Integer competitionId) {
+    public ResponseEntity<CompetitionDtoRes> getCompetitionById(@PathVariable("id") String competitionId) {
         return competitionService.findById(competitionId)
                 .map(competition -> new ResponseEntity<>(competition, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
@@ -44,11 +53,15 @@ public class CompetitionController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCompetitionById(@PathVariable("id") Integer competitionId) {
+    public ResponseEntity<Void> deleteCompetitionById(@PathVariable("id") String competitionId) {
         competitionService.deleteById(competitionId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     // Ajoutez d'autres endpoints si nécessaire
+    @GetMapping("/before")
+    public List<CompetitionDtoRes> getCompetitionsBeforeToday() {
+        return competitionService.getCompetitionsBeforeToday();
+    }
 }
 

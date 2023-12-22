@@ -27,7 +27,7 @@ public class RankingController {
     }
 
     @GetMapping("/{memberid}/{competitionid}")
-    public ResponseEntity<RankingDtoRes> getRankingById(@PathVariable int competitionCode , @PathVariable  int memberNum) {
+    public ResponseEntity<RankingDtoRes> getRankingById(@PathVariable String competitionCode , @PathVariable  int memberNum) {
         RankingId rankingId = new RankingId(competitionCode , memberNum);
         return rankingService.findById(rankingId)
                 .map(ranking -> new ResponseEntity<>(ranking, HttpStatus.OK))
@@ -39,12 +39,25 @@ public class RankingController {
         return ResponseEntity.ok(rankingService.save(ranking));
     }
 
-    @DeleteMapping("/{memberid}/{competitionid}")
-    public ResponseEntity<Void> deleteRankingById(@PathVariable int competitionCode , @PathVariable  int memberNum) {
+    @DeleteMapping("{competitionid}/{memberid}")
+    public ResponseEntity<Void> deleteRankingById(@PathVariable String competitionCode , @PathVariable  int memberNum) {
         RankingId rankingId = new RankingId(competitionCode , memberNum);
         rankingService.deleteById(rankingId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    // Ajoutez d'autres endpoints si nécessaire
+    @GetMapping("/Competition/{competitionCode}")
+    public ResponseEntity<List<RankingDtoRes>> getByCompetition(@PathVariable String competitionCode){
+        return ResponseEntity.ok(rankingService.getRankingsByCompetitionCode(competitionCode));
+    }
+
+    @PutMapping("/calculate/{id}")
+    public ResponseEntity<List<RankingDtoRes>> calculate(@PathVariable String id){
+        return ResponseEntity.ok(rankingService.calculateAndSetRankings(id));
+    }
+
+    @GetMapping("/podium/{id}")
+    public ResponseEntity<List<RankingDtoRes>> podium(@PathVariable String id){
+        return ResponseEntity.ok(rankingService.getPodiumByCompetitionCode(id));
+    }
 }

@@ -12,7 +12,7 @@ public class RankingDtoReq {
 
     @NonNull private int memberId;
 
-    @NonNull private int competitionId;
+    @NonNull private String competitionId;
 
     private int rank;
 

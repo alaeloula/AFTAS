@@ -14,7 +14,6 @@ import java.time.LocalTime;
 public class CompetitionDtoReq {
 
 
-
     @Future(message = "La date doit être dans le futur")
     @NotNull(message = "La date ne peut pas être nulle")
     private LocalDate date;

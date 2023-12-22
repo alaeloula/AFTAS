@@ -13,6 +13,6 @@ public class HuntingDtoReq {
     private int numberOfFish;
     @NonNull
     private int membre_id;
-    @NonNull private int competition_id;
+    @NonNull private String competition_id;
     @NonNull private String fish_id;
 }

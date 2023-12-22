@@ -12,7 +12,7 @@ import java.time.LocalTime;
 @Setter
 @NoArgsConstructor
 public class CompetitionDtoRes {
-    private int code;
+    private String code;
 
     @Future(message = "La date doit être dans le futur")
     @NotNull(message = "La date ne peut pas être nulle")
